@@ -2,21 +2,49 @@ const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
 const path = require('path');
+const fs = require('fs');
 
 // Create Express app and HTTP server
 const app = express();
 const server = http.createServer(app);
 
-// Create Socket.IO server
+// Create Socket.IO server with updated CORS
 const io = new Server(server, {
-
   cors: {
-    origin: ["http://localhost:3001", "https://meme-rivals-arena.onrender.com"],
+    origin: [
+      "http://localhost:3001", 
+      "https://memerivals.netlify.app"
+      // Add other CLIENT domains here that need to connect to your server
+      // Do NOT add your own server domain here
+    ],
     methods: ["GET", "POST"],
     credentials: true,
     allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With", "Accept", "Origin", "Access-Control-Allow-Origin"]
   }
+});
+
+// Add CORS headers for regular HTTP requests
+app.use((req, res, next) => {
+  const allowedOrigins = [
+    'http://localhost:3001',
+    'https://memerivals.netlify.app'
+    // Add other CLIENT domains here that need to connect to your server
+  ];
   
+  const origin = req.headers.origin;
+  if (allowedOrigins.includes(origin)) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+  }
+  
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept, Origin');
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
+  
+  if (req.method === 'OPTIONS') {
+    res.sendStatus(200);
+  } else {
+    next();
+  }
 });
 
 // Add this debugging middleware to the server to track all events
@@ -37,9 +65,39 @@ io.use((socket, next) => {
 // Serve static files from the current directory
 app.use(express.static('./'));
 
-// Serve index.html for the root path
+// Serve index.html for the root path with error handling
 app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'index.html'));
+  const indexPath = path.join(__dirname, 'index.html');
+  
+  // Check if index.html exists
+  if (fs.existsSync(indexPath)) {
+    res.sendFile(indexPath);
+  } else {
+    // If index.html doesn't exist, send a basic HTML response
+    res.send(`
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Memecoin Rivals Server</title>
+      </head>
+      <body>
+        <h1>Memecoin Rivals Multiplayer Server</h1>
+        <p>Server is running on port ${process.env.PORT || 3000}</p>
+        <p>This is a WebSocket server for the Memecoin Rivals game.</p>
+        <p>Connect from your game client to start playing!</p>
+      </body>
+      </html>
+    `);
+  }
+});
+
+// Health check endpoint for Render
+app.get('/health', (req, res) => {
+  res.json({ 
+    status: 'OK', 
+    players: Object.keys(players).length,
+    timestamp: new Date().toISOString()
+  });
 });
 
 // Store connected players
@@ -184,7 +242,8 @@ io.on('connection', (socket) => {
 
 // Start the server
 const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => {
+server.listen(PORT, '0.0.0.0', () => {
   console.log(`Memecoin Rivals multiplayer server running on port ${PORT}`);
-  console.log(`Open http://localhost:${PORT} in your browser to play`);
-}); 
+  console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
+  console.log(`Server URL: ${process.env.RENDER_EXTERNAL_URL || `http://localhost:${PORT}`}`);
+});
