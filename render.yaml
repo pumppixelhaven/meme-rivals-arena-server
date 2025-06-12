@@ -1,0 +1,24 @@
+services:
+  - type: web
+    name: meme-rivals-server
+    env: node
+    buildCommand: npm install
+    startCommand: node server.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: CLIENT_URL
+        value: https://meme-rivals-arena.netlify.app
+      - key: PORT
+        value: 3000
+
+  - type: web
+    name: meme-rivals-client
+    env: node
+    buildCommand: npm install && npm run build
+    startCommand: serve -s build
+    envVars:
+      - key: REACT_APP_ENV
+        value: production
+      - key: REACT_APP_SERVER_URL
+        value: https://meme-rivals-server.onrender.com 
