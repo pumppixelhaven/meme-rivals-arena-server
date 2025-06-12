@@ -10,8 +10,9 @@ const server = http.createServer(app);
 // Create Socket.IO server
 const io = new Server(server, {
   cors: {
-    origin: "*", // Allow connections from any origin for testing
-    methods: ["GET", "POST"]
+    origin: ["http://localhost:3001", "https://meme-rivals-arena.onrender.com"],
+    methods: ["GET", "POST"],
+    credentials: true
   }
 });
 
