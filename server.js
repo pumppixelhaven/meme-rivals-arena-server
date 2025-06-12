@@ -9,11 +9,14 @@ const server = http.createServer(app);
 
 // Create Socket.IO server
 const io = new Server(server, {
+
   cors: {
     origin: ["http://localhost:3001", "https://meme-rivals-arena.onrender.com"],
     methods: ["GET", "POST"],
-    credentials: true
+    credentials: true,
+    allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With", "Accept", "Origin", "Access-Control-Allow-Origin"]
   }
+  
 });
 
 // Add this debugging middleware to the server to track all events
